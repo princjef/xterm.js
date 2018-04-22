@@ -33,7 +33,9 @@ var terminalContainer = document.getElementById('terminal-container'),
       scrollback: document.querySelector('#option-scrollback'),
       tabstopwidth: document.querySelector('#option-tabstopwidth'),
       bellStyle: document.querySelector('#option-bell-style'),
-      screenReaderMode: document.querySelector('#option-screen-reader-mode')
+      screenReaderMode: document.querySelector('#option-screen-reader-mode'),
+      fontButton: document.querySelector('#option-font-button'),
+      fontInput: document.querySelector('#option-font-input')
     },
     colsElement = document.getElementById('cols'),
     rowsElement = document.getElementById('rows'),
@@ -91,6 +93,9 @@ optionElements.tabstopwidth.addEventListener('change', function () {
 });
 optionElements.screenReaderMode.addEventListener('change', function () {
   term.setOption('screenReaderMode', optionElements.screenReaderMode.checked);
+});
+optionElements.fontButton.addEventListener('click', function () {
+  term.setOption('fontFamily', optionElements.fontInput.value);
 });
 
 createTerminal();

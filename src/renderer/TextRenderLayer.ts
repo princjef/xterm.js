@@ -66,7 +66,7 @@ export class TextRenderLayer extends BaseRenderLayer {
       for (let x = 0; x < terminal.cols; x++) {
         const charData = line[x];
         const code: number = <number>charData[CHAR_DATA_CODE_INDEX];
-        const char: string = charData[CHAR_DATA_CHAR_INDEX];
+        let char: string = charData[CHAR_DATA_CHAR_INDEX];
         const attr: number = charData[CHAR_DATA_ATTR_INDEX];
         let width: number = charData[CHAR_DATA_WIDTH_INDEX];
 
@@ -115,9 +115,21 @@ export class TextRenderLayer extends BaseRenderLayer {
           continue;
         }
 
+        let lastCharIndex = x;
+        let lastCharData = charData;
+        for (let x2 = x + 1; x2 < terminal.cols; x2++) {
+          lastCharData = line[x2];
+          if (lastCharData[CHAR_DATA_ATTR_INDEX] === attr) {
+            char += lastCharData[CHAR_DATA_CHAR_INDEX];
+            lastCharIndex++;
+          } else {
+            break;
+          }
+        }
+
         // If the character is an overlapping char and the character to the right is a
         // space, take ownership of the cell to the right.
-        if (width !== 0 && this._isOverlapping(charData)) {
+        if (width !== 0 && this._isOverlapping(lastCharData)) {
           // If the character is overlapping, we want to force a re-render on every
           // frame. This is specifically to work around the case where two
           // overlaping chars `a` and `b` are adjacent, the cursor is moved to b and a
@@ -159,7 +171,7 @@ export class TextRenderLayer extends BaseRenderLayer {
         if (bg < 256) {
           this._ctx.save();
           this._ctx.fillStyle = (bg === INVERTED_DEFAULT_COLOR ? this._colors.foreground.css : this._colors.ansi[bg].css);
-          this.fillCells(x, y, width, 1);
+          this.fillCells(x, y, lastCharIndex - x + width, 1);
           this._ctx.restore();
         }
 
@@ -184,7 +196,20 @@ export class TextRenderLayer extends BaseRenderLayer {
           this.fillBottomLineAtCells(x, y);
         }
 
-        this.drawChar(terminal, char, code, width, x, y, fg, bg, !!(flags & FLAGS.BOLD), !!(flags & FLAGS.DIM));
+        this.drawChar(
+          terminal,
+          char,
+          char.length === 1 ? code : Infinity,
+          lastCharIndex - x + width,
+          x,
+          y,
+          fg,
+          bg,
+          !!(flags & FLAGS.BOLD),
+          !!(flags & FLAGS.DIM)
+        );
+
+        x += lastCharIndex - x;
 
         this._ctx.restore();
       }
